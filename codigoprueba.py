@@ -1,4 +1,5 @@
 import os
+import ipaddress
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -30,6 +31,16 @@ def ver_dispositivos(campus):
     except (ValueError, FileNotFoundError) as e:
         print(f"Error: {e}")
 
+def validar_ip(direccion_ip):
+    try:
+        ip = ipaddress.ip_address(direccion_ip)
+        if ip.version == 4:
+            return "IPv4"
+        elif ip.version == 6:
+            return "IPv6"
+    except ValueError:
+        return None
+
 def agregar_dispositivo(campus):
     clear_screen()
     listar_campus(campus)
@@ -57,13 +68,20 @@ def agregar_dispositivo(campus):
                 print("Elija una jerarquía:\n1. Núcleo\n2. Acceso\n3. Distribución")
                 jerarquia = input("Elija una opción: ")
 
-                # Ingresar direccionamiento IP
-                direccion_ip = input("Ingrese el direccionamiento IP del dispositivo: ")
+                # Ingresar direccionamiento IP y validarlo
+                while True:
+                    direccion_ip = input("Ingrese el direccionamiento IP del dispositivo: ")
+                    tipo_ip = validar_ip(direccion_ip)
+                    if tipo_ip:
+                        print(f"La IP ingresada es válida y es {tipo_ip}.")
+                        break
+                    else:
+                        print("La dirección IP ingresada no es válida. Intente nuevamente.")
 
                 # Guardar la información en el archivo
                 file.write("\n---------------------------------\n")
                 file.write(f"Dispositivo: {nombre_dispositivo}\n")
-                file.write(f"Dirección IP: {direccion_ip}\n")
+                file.write(f"Dirección IP: {direccion_ip} ({tipo_ip})\n")
 
                 if dispositivo == "1":
                     file.write("Tipo: Router\n")
@@ -118,3 +136,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
