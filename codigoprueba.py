@@ -33,13 +33,27 @@ def ver_dispositivos(campus):
 
 def validar_ip(direccion_ip):
     try:
-        ip = ipaddress.ip_address(direccion_ip)
-        if ip.version == 4:
-            return "IPv4"
-        elif ip.version == 6:
-            return "IPv6"
+        # Valida la IP con la máscara de red
+        red = ipaddress.ip_network(direccion_ip, strict=False)
+        if red.version == 4:
+            return "IPv4", red
+        elif red.version == 6:
+            return "IPv6", red
     except ValueError:
-        return None
+        return None, None
+
+def agregar_vlan():
+    vlans = []
+    while True:
+        try:
+            vlan_id = int(input("Ingrese el ID de la VLAN (o 0 para terminar): "))
+            if vlan_id == 0:
+                break
+            vlan_nombre = input(f"Ingrese el nombre de la VLAN {vlan_id}: ")
+            vlans.append((vlan_id, vlan_nombre))
+        except ValueError:
+            print("ID de VLAN inválido, por favor intente nuevamente.")
+    return vlans
 
 def agregar_dispositivo(campus):
     clear_screen()
@@ -68,12 +82,12 @@ def agregar_dispositivo(campus):
                 print("Elija una jerarquía:\n1. Núcleo\n2. Acceso\n3. Distribución")
                 jerarquia = input("Elija una opción: ")
 
-                # Ingresar direccionamiento IP y validarlo
+                # Ingresar direccionamiento IP y validarlo (incluyendo máscara de red)
                 while True:
-                    direccion_ip = input("Ingrese el direccionamiento IP del dispositivo: ")
-                    tipo_ip = validar_ip(direccion_ip)
+                    direccion_ip = input("Ingrese el direccionamiento IP del dispositivo (con máscara, ej: 192.168.1.1/24): ")
+                    tipo_ip, red = validar_ip(direccion_ip)
                     if tipo_ip:
-                        print(f"La IP ingresada es válida y es {tipo_ip}.")
+                        print(f"La IP ingresada es válida y es {tipo_ip} con la red {red}.")
                         break
                     else:
                         print("La dirección IP ingresada no es válida. Intente nuevamente.")
@@ -89,6 +103,15 @@ def agregar_dispositivo(campus):
                     file.write("Tipo: Switch\n")
                 elif dispositivo == "3":
                     file.write("Tipo: Switch multicapa\n")
+
+                # Ingresar VLANs si el dispositivo es Switch o Switch multicapa
+                if dispositivo == "2" or dispositivo == "3":
+                    vlans = agregar_vlan()
+                    file.write("VLANs:\n")
+                    for vlan_id, vlan_nombre in vlans:
+                        file.write(f"  - VLAN {vlan_id}: {vlan_nombre}\n")
+                    if not vlans:
+                        file.write("  No se configuraron VLANs.\n")
 
                 if jerarquia == "1":
                     file.write("Jerarquía: Núcleo\n")
@@ -136,4 +159,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
